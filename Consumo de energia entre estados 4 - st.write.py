@@ -75,6 +75,3 @@ if uploaded_file is not None:
 
 else:
     st.info("Por favor, carregue um arquivo CSV com os dados de consumo de energia.")
-
-else:
-    st.info("Por favor, carregue um arquivo CSV com os dados de consumo de energia.")
