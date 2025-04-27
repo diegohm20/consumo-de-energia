@@ -1,11 +1,16 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from streamlit.components.v1 import html
+
+def color_survived(val):
+    """
+    Colors the text based on the value.
+    """
+    color = 'red' if val < 0 else 'green'
+    return f'color: {color}'
 
 st.title("Análise de Consumo de Energia")
 
-# Sidebar para login (simulado)
 with st.sidebar:
     with st.form(key="login_form"):
         st.header("Login")
@@ -30,12 +35,9 @@ else:
     if uploaded_file is not None:
         try:
             df = pd.read_csv(uploaded_file)
-
-            # Adiciona uma coluna de seleção ao DataFrame
             df["Selecionar"] = False
 
             st.subheader("Dados Carregados:")
-            # Exibe o DataFrame com a coluna de seleção
             edited_df = st.data_editor(
                 df,
                 column_config={
@@ -44,13 +46,13 @@ else:
                         default=False,
                     ),
                 },
-                num_rows=10, # Exibe as 10 primeiras linhas inicialmente
+                num_rows=10,
             )
 
             selected_rows = edited_df[edited_df["Selecionar"]]
             if not selected_rows.empty:
                 st.subheader("Linhas Selecionadas:")
-                st.dataframe(selected_rows)
+                st.dataframe(selected_rows.style.applymap(color_survived, subset=['consumo', 'numero_consumidores'])) # Aplica estilo
             else:
                 st.info("Nenhuma linha selecionada.")
 
@@ -64,7 +66,7 @@ else:
                 consumo_por_estado_ordenado = consumo_por_estado.sort_values(by="consumo_total", ascending=False)
                 fig_bar_estado = px.bar(consumo_por_estado_ordenado, x="sigla_uf", y="consumo_total", labels={"sigla_uf": "Estado", "consumo_total": "Consumo Total de Energia"}, title="Comparação do Consumo Total de Energia por Estado (Barras)")
                 st.plotly_chart(fig_bar_estado)
-                st.write(consumo_por_estado_ordenado)
+                st.dataframe(consumo_por_estado_ordenado.style.applymap(color_survived, subset=['consumo_total'])) # Aplica estilo
 
                 st.subheader("Visualização Adicional (Estado):")
                 col1_estado, col2_estado = st.columns(2)
@@ -77,24 +79,21 @@ else:
 
                 st.subheader("Consumo Médio por Consumidor:")
                 df["consumo_medio"] = df["consumo"] / df["numero_consumidores"]
-
-                st.subheader("Consumo Médio por Estado:")
                 consumo_medio_por_estado = df.groupby("sigla_uf")["consumo_medio"].mean().reset_index()
                 consumo_medio_por_estado_ordenado = consumo_medio_por_estado.sort_values(by="consumo_medio", ascending=False)
                 fig_bar_medio_estado = px.bar(consumo_medio_por_estado_ordenado, x="sigla_uf", y="consumo_medio", labels={"sigla_uf": "Estado", "consumo_medio": "Consumo Médio por Consumidor"}, title="Consumo Médio de Energia por Consumidor por Estado (Barras)")
                 st.plotly_chart(fig_bar_medio_estado)
-                st.write(consumo_medio_por_estado_ordenado)
+                st.dataframe(consumo_medio_por_estado_ordenado.style.applymap(color_survived, subset=['consumo_medio'])) # Aplica estilo
 
-                st.subheader("Consumo Médio por Tipo de Consumo:")
                 consumo_medio_por_tipo = df.groupby("tipo_consumo")["consumo_medio"].mean().reset_index()
                 consumo_medio_por_tipo_ordenado = consumo_medio_por_tipo.sort_values(by="consumo_medio", ascending=False)
                 fig_bar_medio_tipo = px.bar(consumo_medio_por_tipo_ordenado, x="tipo_consumo", y="consumo_medio", labels={"tipo_consumo": "Tipo de Consumo", "consumo_medio": "Consumo Médio por Consumidor"}, title="Consumo Médio de Energia por Consumidor por Tipo de Consumo (Barras)")
                 st.plotly_chart(fig_bar_medio_tipo)
-                st.write(consumo_medio_por_tipo_ordenado)
+                st.dataframe(consumo_medio_por_tipo_ordenado.style.applymap(color_survived, subset=['consumo_medio'])) # Aplica estilo
 
                 st.subheader("Consumo Médio por Estado e Tipo de Consumo:")
                 consumo_medio_estado_tipo = df.groupby(["sigla_uf", "tipo_consumo"])["consumo_medio"].mean().reset_index()
-                st.write(consumo_medio_estado_tipo)
+                st.dataframe(consumo_medio_estado_tipo.style.applymap(color_survived, subset=['consumo_medio'])) # Aplica estilo
 
         except pd.errors.EmptyDataError:
             st.error("O arquivo CSV está vazio.")
