@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# --- Configurações da página Streamlit (mantido como está) ---
+# --- Configurações da página Streamlit ---
 st.set_page_config(layout="wide")
 st.markdown(
     """
@@ -15,7 +15,7 @@ st.markdown(
         background: #222;
         color: #eee;
     }
-    h1, h2, h3, h4, h5, h6, p, st.info, st.success, st.error, st.warning {
+    h1, h2, h3, h4, h5, h6, p, .st-emotion-cache-10q7673, .st-emotion-cache-1gh866b, .st-emotion-cache-1c7y2jl, .st-emotion-cache-1c7y2jl, .st-emotion-cache-nahz7x { /* Adicionado seletores para st.info, st.success, st.error, st.warning */
         color: #eee;
     }
     .stDataFrame, .stTable {
@@ -51,22 +51,37 @@ st.markdown(
     .streamlit-expander-header {
         color: #eee;
     }
+    /* Estilo para links de download */
+    .stDownloadButton > button {
+        background-color: #007bff;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        text-decoration: none;
+        display: inline-block;
+        font-weight: bold;
+    }
+    .stDownloadButton > button:hover {
+        background-color: #0056b3;
+    }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
 def color_survived(val):
+    """Aplica cor a valores numéricos: salmão para negativos, verde claro para positivos."""
     color = 'salmon' if val < 0 else 'lightgreen'
     return f'color: {color}'
 
 def format_kwh(val):
+    """Formata um valor como kWh com duas casas decimais."""
     return f"{val:.2f} kWh"
 
 st.title("📊 Análise de Consumo de Energia")
 st.markdown("Uma aplicação Streamlit interativa para visualizar dados de consumo de energia.")
 
-# --- Lógica de Login (mantido como está) ---
+# --- Lógica de Login ---
 with st.sidebar:
     st.header("🔒 Login")
     with st.form(key="login_form"):
@@ -74,39 +89,78 @@ with st.sidebar:
         password = st.text_input("Senha", type="password")
         login_button = st.form_submit_button("Entrar")
         if login_button:
-            if username == "usuario" and password == "senha":
+            if username == "usuario" and password == "senha": # Credenciais de exemplo
                 st.success("✅ Login realizado com sucesso!")
                 st.session_state.logged_in = True
             else:
                 st.error("❌ Erro de login. Verifique suas credenciais.")
 
+# Verifica o estado de login
 if not hasattr(st.session_state, "logged_in") or not st.session_state.logged_in:
     st.info("🔑 Faça login na barra lateral para acessar a análise.")
 else:
-    # --- NOVO: Carregamento do DataFrame diretamente do repositório ---
-    data_file_path = 'data/seu_arquivo_de_dados.csv' # AJUSTE ESTE CAMINHO se o arquivo estiver em outro lugar!
+    df = None # Inicializa df como None
 
-    try:
-        df = pd.read_csv(data_file_path)
-        df["Selecionar"] = False # Certifique-se de que esta coluna ainda é necessária
-        st.success(f"Dados carregados com sucesso de '{data_file_path}'!") # Confirma o carregamento
+    with st.sidebar:
+        st.header("📂 Carregar Dados")
+        st.markdown("---")
+        st.markdown("### ⬇️ Baixe a planilha de exemplo:")
+        # Link para download da planilha do Google Drive
+        st.markdown("[Clique aqui para baixar a planilha de exemplo](https://drive.google.com/file/d/1tDyGszbunFW1iibNoGstsIPbcAHSlXxC/view?usp=sharing)")
+        st.markdown("---")
+        st.markdown("### ⬆️ Ou carregue sua própria planilha:")
+        uploaded_file = st.file_uploader("Selecione um arquivo CSV", type=["csv"])
 
-        # --- Restante do seu código de análise (mantido como está) ---
+    if uploaded_file is not None:
+        try:
+            df = pd.read_csv(uploaded_file)
+            st.success("✅ Arquivo carregado com sucesso via navegador!")
+        except pd.errors.EmptyDataError:
+            st.error("⚠️ O arquivo CSV carregado está vazio.")
+        except pd.errors.ParserError:
+            st.error("⚠️ Erro ao ler o arquivo CSV. Verifique o formato do arquivo carregado.")
+        except Exception as e:
+            st.error(f"⚠️ Ocorreu um erro inesperado ao carregar o arquivo: {e}")
+    else:
+        # Tenta carregar o DataFrame de um caminho local (para implantação via terminal/Git)
+        data_file_path = 'data/exemplo_consumo.csv' # Certifique-se de que este arquivo existe no seu repositório!
+        try:
+            df = pd.read_csv(data_file_path)
+            st.info(f"ℹ️ Carregando dados padrão do repositório: '{data_file_path}'")
+        except FileNotFoundError:
+            st.warning(f"⚠️ Nenhum arquivo carregado e o arquivo padrão '{data_file_path}' não foi encontrado no repositório. Por favor, carregue um arquivo CSV.")
+        except pd.errors.EmptyDataError:
+            st.error(f"⚠️ O arquivo padrão '{data_file_path}' está vazio.")
+        except pd.errors.ParserError:
+            st.error(f"⚠️ Erro ao ler o arquivo padrão '{data_file_path}'. Verifique o formato.")
+        except Exception as e:
+            st.error(f"⚠️ Ocorreu um erro inesperado ao carregar o arquivo padrão: {e}")
+
+    # --- Lógica de Análise (só executa se o DataFrame foi carregado com sucesso) ---
+    if df is not None:
+        # Adiciona a coluna 'Selecionar' se ainda não existir
+        if "Selecionar" not in df.columns:
+            df["Selecionar"] = False
+
         st.subheader("🔍 Pré-visualização dos Dados Carregados:")
         edited_df = st.data_editor(
-            df.head(10),
+            df.head(10), # Mostra apenas as 10 primeiras linhas para pré-visualização
             column_config={"Selecionar": st.column_config.CheckboxColumn("Selecionar", default=False)},
             num_rows="dynamic",
+            key="data_preview_editor" # Adiciona uma chave única para o data_editor
         )
         selected_rows = edited_df[edited_df["Selecionar"]]
+
         if not selected_rows.empty:
             st.subheader("📌 Linhas Selecionadas:")
             st.dataframe(selected_rows.style.applymap(color_survived, subset=['consumo', 'numero_consumidores']).format({'consumo': '{:.2f}', 'numero_consumidores': '{:.0f}'}))
         else:
             st.info("👆 Selecione linhas na tabela para destacar.")
 
-        if not all(col in df.columns for col in ["sigla_uf", "consumo", "numero_consumidores", "tipo_consumo"]):
-            st.error("⚠️ Colunas 'sigla_uf', 'consumo', 'numero_consumidores' e 'tipo_consumo' são obrigatórias no CSV.")
+        # Verifica se as colunas obrigatórias existem antes de prosseguir com as análises
+        required_columns = ["sigla_uf", "consumo", "numero_consumidores", "tipo_consumo"]
+        if not all(col in df.columns for col in required_columns):
+            st.error(f"⚠️ As colunas {', '.join(required_columns)} são obrigatórias no CSV. Verifique seu arquivo.")
         else:
             st.subheader("📊 Análises de Consumo:")
 
@@ -125,7 +179,9 @@ else:
 
             # Consumo Médio por Consumidor
             st.markdown("### 👤 Consumo Médio de Energia por Consumidor")
-            df["consumo_medio"] = df["consumo"] / df["numero_consumidores"]
+            # Evita divisão por zero se 'numero_consumidores' for 0
+            df["consumo_medio"] = df.apply(lambda row: row["consumo"] / row["numero_consumidores"] if row["numero_consumidores"] != 0 else 0, axis=1)
+
             consumo_medio_por_estado = df.groupby("sigla_uf")["consumo_medio"].mean().reset_index().sort_values(by="consumo_medio", ascending=False)
             col3, col4 = st.columns(2)
             with col3:
@@ -142,14 +198,3 @@ else:
             st.markdown("### 🏘️ Consumo Médio Detalhado por Estado e Tipo de Consumo")
             consumo_medio_estado_tipo = df.groupby(["sigla_uf", "tipo_consumo"])["consumo_medio"].mean().reset_index()
             st.dataframe(consumo_medio_estado_tipo.style.format({'consumo_medio': '{:.2f} kWh'}))
-
-    except FileNotFoundError:
-        st.error(f"⚠️ Erro: O arquivo '{data_file_path}' não foi encontrado. Certifique-se de que ele está no seu repositório Git no caminho correto.")
-    except pd.errors.EmptyDataError:
-        st.error("⚠️ O arquivo CSV está vazio.")
-    except pd.errors.ParserError:
-        st.error("⚠️ Erro ao ler o arquivo CSV. Verifique o formato.")
-    except KeyError as e:
-        st.error(f"⚠️ A coluna '{e}' não foi encontrada no CSV. Verifique se as colunas obrigatórias estão presentes.")
-    except Exception as e:
-        st.error(f"⚠️ Ocorreu um erro inesperado ao carregar ou processar os dados: {e}")
