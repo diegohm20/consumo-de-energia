@@ -15,7 +15,7 @@ st.markdown(
         background: #222;
         color: #eee;
     }
-    h1, h2, h3, h4, h5, h6, p, .st-emotion-cache-10q7673, .st-emotion-cache-1gh866b, .st-emotion-cache-1c7y2jl, .st-emotion-cache-1c7y2jl, .st-emotion-cache-nahz7x { /* Adicionado seletores para st.info, st.success, st.error, st.warning */
+    h1, h2, h3, h4, h5, h6, p, .st-emotion-cache-10q7673, .st-emotion-cache-1gh866b, .st-emotion-cache-1c7y2jl, .st-emotion-cache-nahz7x { /* Adicionado seletores para st.info, st.success, st.error, st.warning */
         color: #eee;
     }
     .stDataFrame, .stTable {
@@ -51,7 +51,7 @@ st.markdown(
     .streamlit-expander-header {
         color: #eee;
     }
-    /* Estilo para links de download */
+    /* Estilo para links de download (mantido, mas não usado diretamente) */
     .stDownloadButton > button {
         background-color: #007bff;
         color: white;
@@ -101,47 +101,24 @@ if not hasattr(st.session_state, "logged_in") or not st.session_state.logged_in:
 else:
     df = None # Inicializa df como None
 
-    with st.sidebar:
-        st.header("📂 Carregar Dados")
-        st.markdown("---")
-        st.markdown("### ⬇️ Baixe a planilha de exemplo:")
-        # Link para download da planilha do Google Drive
-        st.markdown("[Clique aqui para baixar a planilha de exemplo](https://drive.google.com/file/d/1tDyGszbunFW1iibNoGstsIPbcAHSlXxC/view?usp=sharing)")
-        st.markdown("---")
-        st.markdown("### ⬆️ Ou carregue sua própria planilha:")
-        uploaded_file = st.file_uploader("Selecione um arquivo CSV", type=["csv"])
+    # --- NOVO: Carrega o DataFrame diretamente da URL do Google Drive ---
+    # IMPORTANTE: Esta é uma URL de download direto do Google Drive.
+    # A URL original foi convertida para este formato.
+    google_drive_url = 'https://drive.google.com/uc?export=download&id=1tDyGszbunFW1iibNoGstsIPbcAHSlXxC'
 
-    if uploaded_file is not None:
-        try:
-            df = pd.read_csv(uploaded_file)
-            st.success("✅ Arquivo carregado com sucesso via navegador!")
-        except pd.errors.EmptyDataError:
-            st.error("⚠️ O arquivo CSV carregado está vazio.")
-        except pd.errors.ParserError:
-            st.error("⚠️ Erro ao ler o arquivo CSV. Verifique o formato do arquivo carregado.")
-        except Exception as e:
-            st.error(f"⚠️ Ocorreu um erro inesperado ao carregar o arquivo: {e}")
-    else:
-        # Tenta carregar o DataFrame de um caminho local (para implantação via terminal/Git)
-        data_file_path = 'data/exemplo_consumo.csv' # Certifique-se de que este arquivo existe no seu repositório!
-        try:
-            df = pd.read_csv(data_file_path)
-            st.info(f"ℹ️ Carregando dados padrão do repositório: '{data_file_path}'")
-        except FileNotFoundError:
-            st.warning(f"⚠️ Nenhum arquivo carregado e o arquivo padrão '{data_file_path}' não foi encontrado no repositório. Por favor, carregue um arquivo CSV.")
-        except pd.errors.EmptyDataError:
-            st.error(f"⚠️ O arquivo padrão '{data_file_path}' está vazio.")
-        except pd.errors.ParserError:
-            st.error(f"⚠️ Erro ao ler o arquivo padrão '{data_file_path}'. Verifique o formato.")
-        except Exception as e:
-            st.error(f"⚠️ Ocorreu um erro inesperado ao carregar o arquivo padrão: {e}")
+    try:
+        with st.spinner("Carregando dados do Google Drive..."):
+            df = pd.read_csv(google_drive_url)
+        
+        # Garante que a coluna 'Selecionar' exista para o data_editor, se necessário
+        if "Selecionar" not in df.columns:
+            df["Selecionar"] = False
+        st.success(f"✅ Dados carregados com sucesso da URL: '{google_drive_url}'")
+    except Exception as e:
+        st.error(f"⚠️ Ocorreu um erro ao carregar os dados da URL: {e}. Verifique se a URL está correta e se o arquivo CSV está acessível.")
 
     # --- Lógica de Análise (só executa se o DataFrame foi carregado com sucesso) ---
     if df is not None:
-        # Adiciona a coluna 'Selecionar' se ainda não existir
-        if "Selecionar" not in df.columns:
-            df["Selecionar"] = False
-
         st.subheader("🔍 Pré-visualização dos Dados Carregados:")
         edited_df = st.data_editor(
             df.head(10), # Mostra apenas as 10 primeiras linhas para pré-visualização
