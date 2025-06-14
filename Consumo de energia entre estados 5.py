@@ -7,46 +7,49 @@ st.set_page_config(layout="wide")
 st.markdown(
     """
     <style>
-    .reportview-container {
-        background: #111; /* Fundo escuro */
-        color: #eee; /* Texto claro */
+    /* Estilos para o tema Dark */
+    body {
+        background-color: #000; /* Fundo mais escuro */
+        color: #eee; /* Texto claro para contraste */
     }
-    .sidebar .sidebar-content {
-        background: #222;
+    .stApp {
+        background-color: #000; /* Garante que o fundo principal do app seja preto */
+    }
+    .reportview-container {
+        background: #000;
         color: #eee;
     }
-    h1, h2, h3, h4, h5, h6, p, .st-emotion-cache-10q7673, .st-emotion-cache-1gh866b, .st-emotion-cache-1c7y2jl, .st-emotion-cache-nahz7x { /* Adicionado seletores para st.info, st.success, st.error, st.warning */
+    .sidebar .sidebar-content {
+        background: #111; /* Barra lateral um pouco menos escura que o fundo principal */
+        color: #eee;
+    }
+    h1, h2, h3, h4, h5, h6, p, .st-emotion-cache-10q7673, .st-emotion-cache-1gh866b, .st-emotion-cache-1c7y2jl, .st-emotion-cache-nahz7x, .st-emotion-cache-1i07m2x { /* Adicionado seletores para st.info, st.success, st.error, st.warning e outros textos */
         color: #eee;
     }
     .stDataFrame, .stTable {
         color: #eee;
-        background-color: #333;
-        border: 1px solid #555;
+        background-color: #222; /* Fundo dos DataFrames mais escuro */
+        border: 1px solid #444;
     }
     .stButton>button {
         color: #eee;
-        background-color: #444;
-        border: 1px solid #666;
-    }
-    .stTextInput>div>div>input {
-        color: #eee;
-        background-color: #333;
+        background-color: #333; /* Fundo dos botões mais escuro */
         border: 1px solid #555;
     }
-    .stPassword>div>div>input {
+    .stTextInput>div>div>input, .stPassword>div>div>input {
         color: #eee;
-        background-color: #333;
-        border: 1px solid #555;
+        background-color: #222; /* Fundo dos campos de input e senha mais escuro */
+        border: 1px solid #444;
     }
     .stFileUploader>div>div>div>button {
         color: #eee;
-        background-color: #444;
-        border: 1px solid #666;
+        background-color: #333;
+        border: 1px solid #555;
     }
     .streamlit-expander {
-        background-color: #222;
+        background-color: #111; /* Fundo dos expanders mais escuro */
         color: #eee;
-        border: 1px solid #444;
+        border: 1px solid #333;
     }
     .streamlit-expander-header {
         color: #eee;
@@ -84,6 +87,9 @@ st.markdown("Uma aplicação Streamlit interativa para visualizar dados de consu
 # --- Lógica de Login ---
 with st.sidebar:
     st.header("🔒 Login")
+    # Informação das credenciais de login
+    st.info("Credenciais de login:\n\n**Usuário:** `usuario`\n**Senha:** `senha`")
+    
     with st.form(key="login_form"):
         username = st.text_input("Usuário")
         password = st.text_input("Senha", type="password")
@@ -109,7 +115,7 @@ else:
     try:
         with st.spinner("Carregando dados do Google Drive..."):
             df = pd.read_csv(google_drive_url)
-        
+           
         # Garante que a coluna 'Selecionar' exista para o data_editor, se necessário
         if "Selecionar" not in df.columns:
             df["Selecionar"] = False
